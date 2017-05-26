@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from __future__ import print_function
 
 import sys
@@ -9,9 +10,12 @@ from lxml import etree
 
 re._MAXCACHE = 100000
 
-RE_META = re.compile('<meta[^>]*?name=[\'"]([^>]*?)[\'"][^>]*?content=[\'"]([^>]*?)[\'"][^>]*?>', flags=re.I | re.M)
+# FIXME: use etree when available?
+RE_META = re.compile(
+    r'<meta[^>]*?name=[\'"]([^>]*?)[\'"][^>]*?content=[\'"]([^>]*?)[\'"][^>]*?>', flags=re.I | re.M)
 RE_SCRIPTS = re.compile(r'<script[^>]+src=(?:"|\')([^"\']+)',
                         flags=re.I | re.M)
+RE_LINKS = re.compile(r'<link[^>]+href=([^>]+)', flags=re.I | re.M)
 
 
 def _output(dct):
@@ -21,16 +25,7 @@ def _output(dct):
 def builtwith(url, headers=None, html=None, user_agent='builtwith'):
     """Detect the technology used to build a website
 
-    >>> _output(builtwith("http://wordpress.com"))
-    '{"Blogs": ["PHP", "WordPress"], "CMS": ["WordPress"], "Font Scripts": ["Google Font API"], "Javascript Frameworks": ["Modernizr"], "Programming Languages": ["PHP"], "Web Servers": ["Nginx"]}'
-    >>> _output(builtwith("http://webscraping.com"))
-    '{"Javascript Frameworks": ["jQuery", "Modernizr"], "Web Frameworks": ["Twitter Bootstrap"], "Web Servers": ["Nginx"]}'
-    >>> _output(builtwith("http://microsoft.com"))
-    '{"Javascript Frameworks": ["jQuery"], "Mobile Frameworks": ["jQuery Mobile"], "Web Servers": ["IIS"], "Operating Systems": ["Windows Server"]}'
-    >>> _output(builtwith("http://jquery.com"))
-    '{"Blogs": ["PHP", "WordPress"], "CDN": ["CloudFlare"], "CMS": ["WordPress"], "Javascript Frameworks": ["jQuery", "Modernizr"], "Programming Languages": ["PHP"], "Web Servers": ["Nginx"]}'
-    >>> _output(builtwith("http://joomla.org"))
-    '{"CMS": ["Joomla"], "Font Scripts": ["Google Font API"], "Javascript Frameworks": ["jQuery"], "Miscellaneous": ["Gravatar"], "Programming Languages": ["PHP"], "Video Players": ["YouTube"], "Web Frameworks": ["Twitter Bootstrap"], "Web Servers": ["LiteSpeed"]}'
+    FIXME: test data (maybe compare against node wappalyzer-cli)?
     """
     techs = {}
 
@@ -66,7 +61,7 @@ def builtwith(url, headers=None, html=None, user_agent='builtwith'):
     # check html
     if html:
         # node version only looks in script tag itself
-        script_tags = RE_SCRIPTS.findall(html)
+        script_tags = RE_SCRIPTS.findall(html) + RE_LINKS.findall(html)
 
         for app_name, app_spec in data['apps'].items():
             for s_tag in script_tags:
@@ -105,6 +100,7 @@ def add_app(techs, app_name, app_spec):
     """Add this app to technology
     """
     for category in get_categories(app_spec):
+        category = category.get('name')
         if category not in techs:
             techs[category] = []
         if app_name not in techs[category]:
@@ -143,13 +139,18 @@ def contains_dict(d1, d2):
     return True
 
 
-def load_apps(filename='apps.json.py'):
+def load_apps():
     """Load apps from Wappalyzer JSON (https://github.com/ElbertF/Wappalyzer)
+
+    FIXME: add support to download update
+    https://raw.githubusercontent.com/AliasIO/Wappalyzer/master/src/apps.json
+    FIXME: pre-split version suffix from all regex
     """
-    # get the path of this filename relative to the current script
-    # XXX add support to download update
-    filename = os.path.join(os.getcwd(), os.path.dirname(__file__), filename)
+    filename = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                            'data', 'apps.json')
     return json.load(open(filename))
+
+
 data = load_apps()
 
 
