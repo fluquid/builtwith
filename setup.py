@@ -6,7 +6,7 @@ def read(filename):
 
 setup(
     name='builtwith',
-    version='1.4',
+    version='1.5',
     packages=['builtwith'],
     author='Johannes Ahlmann, original: Richard Penman',
     author_email='johannes@fluquid.com',

@@ -6,13 +6,14 @@ import os
 import regex as re
 import json
 from six.moves.urllib.request import urlopen, Request
-from lxml import etree
+# from lxml import etree
 
 re._MAXCACHE = 100000
 
 # FIXME: use etree when available?
-RE_META = re.compile(
-    r'<meta[^>]*?name=[\'"]([^>]*?)[\'"][^>]*?content=[\'"]([^>]*?)[\'"][^>]*?>', flags=re.I | re.M)
+RE_META = re.compile(r'<meta[^>]*?(name|http-equiv)=[\'"]([^>]*?)[\'"][^>]*?' +
+                     r'content=[\'"]([^>]*?)[\'"][^>]*?>',
+                     flags=re.I | re.M)
 RE_SCRIPTS = re.compile(r'<script[^>]+src=(?:"|\')([^"\']+)',
                         flags=re.I | re.M)
 RE_LINKS = re.compile(r'<link[^>]+href=([^>]+)', flags=re.I | re.M)
